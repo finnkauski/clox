@@ -4,6 +4,22 @@
 #include <stdio.h>
 #include <string.h>
 
+#define DEBUG 0
+#if DEBUG
+#define debug(fmt, ...) fprintf(stderr, "[DEBUG] " fmt "\n", ##__VA_ARGS__)
+#define debug_block(...)                                                       \
+  do {                                                                         \
+    __VA_ARGS__                                                                \
+  } while (0)
+#else
+#define debug(fmt, ...)                                                        \
+  do {                                                                         \
+  } while (0)
+#define debug_block(...)                                                       \
+  do {                                                                         \
+  } while (0)
+#endif
+
 // Convenience mappings.
 const char *TOKEN_NAMES[TOKEN_TYPE_LEN] = {
     [TOKEN_LEFT_PAREN] = "LEFT_PAREN",
@@ -11,10 +27,12 @@ const char *TOKEN_NAMES[TOKEN_TYPE_LEN] = {
     [TOKEN_LEFT_BRACE] = "LEFT_BRACE",
     [TOKEN_RIGHT_BRACE] = "RIGHT_BRACE",
     [TOKEN_COMMA] = "COMMA",
+    [TOKEN_COMMENT] = "COMMENT",
     [TOKEN_DOT] = "DOT",
     [TOKEN_MINUS] = "MINUS",
     [TOKEN_PLUS] = "PLUS",
     [TOKEN_SEMICOLON] = "SEMICOLON",
+    [TOKEN_SLASH] = "SLASH",
     [TOKEN_STAR] = "STAR",
     [TOKEN_BANG] = "BANG",
     [TOKEN_BANG_EQUAL] = "BANG_EQUAL",
@@ -30,9 +48,10 @@ const char *TOKEN_NAMES[TOKEN_TYPE_LEN] = {
 const char *TOKEN_VALUES[TOKEN_TYPE_LEN] = {
     [TOKEN_LEFT_PAREN] = "(", [TOKEN_RIGHT_PAREN] = ")",
     [TOKEN_LEFT_BRACE] = "{", [TOKEN_RIGHT_BRACE] = "}",
-    [TOKEN_COMMA] = ",",      [TOKEN_DOT] = ".",
-    [TOKEN_MINUS] = "-",      [TOKEN_PLUS] = "+",
-    [TOKEN_SEMICOLON] = ";",  [TOKEN_STAR] = "*",
+    [TOKEN_COMMA] = ",",      [TOKEN_COMMENT] = "// ... \\n",
+    [TOKEN_DOT] = ".",        [TOKEN_MINUS] = "-",
+    [TOKEN_PLUS] = "+",       [TOKEN_SEMICOLON] = ";",
+    [TOKEN_SLASH] = "/",      [TOKEN_STAR] = "*",
     [TOKEN_BANG] = "!",       [TOKEN_BANG_EQUAL] = "!=",
     [TOKEN_EQUAL] = "=",      [TOKEN_EQUAL_EQUAL] = "==",
     [TOKEN_GREATER] = ">",    [TOKEN_GREATER_EQUAL] = ">=",
@@ -102,6 +121,7 @@ char advance(Lexer *lexer) {
 }
 
 Token token_at(Lexer *lexer, TokenType type, const char *start) {
+  debug("Creating new token: %s", TOKEN_NAMES[type]);
   return (Token){
       .type = type,
       .line = lexer->line,
@@ -115,13 +135,24 @@ Token newtoken(Lexer *lexer, TokenType type) {
   return token_at(lexer, type, start);
 }
 
+// If current token matches eat it
 bool match(Lexer *lexer, const char expected) {
-  if (*(lexer->current + 1) == expected) {
-    lexer->current++;
-    printf("MATCHED offset: %zu\n", get_offset(lexer));
+  // NOTE: reason here we don't increment is because in scanning
+  // We are already incrementing so we want to check if the current
+  // character matches and if it does we consume
+  if (*(lexer->current) == expected) {
+    debug("Consumed after match: `%c`", *lexer->current);
+    advance(lexer);
     return true;
   };
   return false;
+}
+
+// Get current token
+char peek(Lexer *lexer) {
+  if (lexer->finished)
+    return '\0';
+  return *lexer->current;
 }
 
 LexerStatus next_token(Lexer *lexer, Token *token) {
@@ -158,6 +189,19 @@ LexerStatus next_token(Lexer *lexer, Token *token) {
   case '*':
     *token = newtoken(lexer, TOKEN_STAR);
     break;
+  case '/':
+    if (match(lexer, '/')) {
+      debug("Starting comment line...");
+      // Comments go to the end of the line
+      while ((peek(lexer) != '\n') && !lexer->finished) {
+        debug("Comment `%c`", *lexer->current);
+        advance(lexer);
+      }
+      *token = newtoken(lexer, TOKEN_COMMENT);
+    } else {
+      *token = newtoken(lexer, TOKEN_SLASH);
+    }
+    break;
   case '!':
     *token = match(lexer, '=') ? newtoken(lexer, TOKEN_BANG_EQUAL)
                                : newtoken(lexer, TOKEN_BANG);
@@ -183,7 +227,7 @@ LexerStatus next_token(Lexer *lexer, Token *token) {
   ASSERT(token->type != TOKEN_ERROR,
          "Did not handle a given token, found TOKEN_ERROR during scanning");
 
-  debug_token(token);
+  // debug_token(token);
 
   return status;
 }
@@ -195,17 +239,13 @@ LexerStatus consume_whitespace(Lexer *lexer) {
          "Lexer current is NULL while consuming whitespace");
   while (isspace(*lexer->current)) {
     if (*lexer->current == '\n') {
+      debug("Consuming '\\n' and incrementing line");
       lexer->line++;
-      // printf("BEFORE `%c` ", *lexer->current);
-      // printf("NOM `%c` ", advance(lexer));
-      // printf("NOW `%c`\n", *lexer->current);
       advance(lexer);
       lexer->line_offset = 0; // RESET the line_offset
     } else {
+      debug("Consuming WHITESPACE");
       advance(lexer);
-      // printf("BEFORE `%c` ", *lexer->current);
-      // printf("NOM `%c` ", advance(lexer));
-      // printf("NOW `%c`\n", *lexer->current);
     }
     status = LEXER_SUCCESS;
   }
@@ -219,6 +259,19 @@ LexerStatus scan_tokens(Lexer *lexer) {
     ASSERT(lexer->current != NULL,
            "NULL `current` found for the given lexer inside of scan_token");
 
+    debug_block({
+      fprintf(stderr, "<|");
+      for (int debug_i = 0; debug_i < 10; debug_i++) {
+        if (isprint(lexer->current[debug_i])) {
+          fprintf(stderr, "%c", lexer->current[debug_i]);
+        } else {
+          // printf("\\x%02X", lexer->current[debug_i]);
+          fprintf(stderr, "\\?");
+        }
+      };
+      fprintf(stderr, "|>\n");
+    });
+
     // Consume whitespace advances the lexer, we might be out of text
     // so loop back to check while loop condition;
     if (consume_whitespace(lexer) == LEXER_SUCCESS)
@@ -228,18 +281,14 @@ LexerStatus scan_tokens(Lexer *lexer) {
     status = next_token(lexer, &token);
 
     if (status != LEXER_SUCCESS) {
+      debug("Lexer failed");
       break; // scaning loop
     }
 
     ASSERT(status == LEXER_SUCCESS, "Lexer token parsing failed");
 
-    // printf("line: %zu, offset: %zu, character `%c`, type: "
-    //        "%s\n",
-    //        lexer->line, lexer->line_offset, *lexer->current,
-    //        TOKEN_NAMES[token.type]);
-
-    // display_token(&token);
-    arrput(lexer->tokens, token);
+    if (token.type != TOKEN_COMMENT)
+      arrput(lexer->tokens, token);
   }
   return status;
 }
@@ -247,7 +296,7 @@ LexerStatus scan_tokens(Lexer *lexer) {
 // Printing and displaying
 void debug_token(const Token *token) {
   printf("Token {\n");
-  printf(" type: %s", TOKEN_NAMES[token->type]);
+  printf(" type: %s\n", TOKEN_NAMES[token->type]);
   printf(" line: %zu\n"
          " start: %p\n"
          " has_value: %d\n",
@@ -264,7 +313,7 @@ void debug_lexer(const Lexer *lexer) {
   ASSERT(lexer->current != NULL, "Lexer current is NULL during display");
 
   printf("Lexer {\n"
-         " current: %c,\n",
+         " current: `%c`,\n",
          *lexer->current);
 
   // truncate the source code

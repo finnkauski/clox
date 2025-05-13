@@ -1,8 +1,13 @@
 ((
  {{ . }}, {{ -+* }}; !=,
+ // Hello world comment
  != == =
+ /
  >
  >=
  <
- <=
+ <=<
 ))
+/
+// COMMENT
+// COMMENT

@@ -4,7 +4,7 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
-#define TOKEN_TYPE_LEN 40
+#define TOKEN_TYPE_LEN 41
 #define LEXER_EXIT_STATUS 9
 
 #include "stb_ds.h"
@@ -21,6 +21,7 @@ typedef enum {
   TOKEN_LEFT_BRACE,
   TOKEN_RIGHT_BRACE,
   TOKEN_COMMA,
+  TOKEN_COMMENT,
   TOKEN_DOT,
   TOKEN_MINUS,
   TOKEN_PLUS,

@@ -41,6 +41,7 @@ int main(int argc, char *argv[]) {
       printf("Tokens: \n");
       for (size_t i = 0; (int)i < arrlen(lexer.tokens); i++) {
         display_token(&lexer.tokens[i]);
+        // debug_token(&lexer.tokens[i]);
       }
 
 

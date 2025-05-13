@@ -1,3 +1,9 @@
+// this is a comment
+(( )){} // grouping stuff
+!*+-/=<> <= == // operators
+
+"Hello World"
+
 ((
  {{ . }}, {{ -+* }}; !=,
  // Hello world comment

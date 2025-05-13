@@ -63,6 +63,28 @@ extern const char* TOKEN_VALUES[TOKEN_TYPE_LEN];
 extern const char* TOKEN_NAMES[TOKEN_TYPE_LEN];
 
 
+typedef enum {
+    TYPE_NULL,
+    TYPE_INT,
+    TYPE_FLOAT,
+    TYPE_STRING
+} ValueType;
+
+typedef struct {
+    const char* start;
+    size_t length;
+} String;
+
+typedef struct {
+    ValueType type;
+    union {
+        void* none;
+        int int_value;
+        float float_value;
+        String string_value;
+    } as;
+} Value;
+
 typedef struct {
   TokenType type;
   // string location in the source
@@ -70,7 +92,7 @@ typedef struct {
   const char* start;
 
   // maybe parsed value
-  void* value;
+  Value value;
 } Token;
 
 

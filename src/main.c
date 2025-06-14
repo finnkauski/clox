@@ -4,6 +4,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+void usage() {
+    fprintf(stderr, "Usage: clox tokenize <filename>\n");
+}
+
 int main(int argc, char *argv[]) {
   // TODO: do we need this ?
   // Disable output buffering
@@ -11,7 +15,7 @@ int main(int argc, char *argv[]) {
   setbuf(stderr, NULL);
 
   if (argc < 3) {
-    fprintf(stderr, "Usage: clox tokenize <filename>\n");
+    usage();
     return 1;
   }
 
@@ -27,32 +31,24 @@ int main(int argc, char *argv[]) {
            "File read output is less than or equal to.");
 
     if (strlen(file_contents) > 0) {
-      printf("Initialising lexer...");
-      Lexer lexer = init_lexer(file_contents);
-      printf("\033[32mOK\033[0m\n");
+      Lexer lexer = init_lexer(argv[2], file_contents);
 
-      printf("Scanning tokens...");
-      LexerStatus status = scan_tokens(&lexer);
-      if (status == LEXER_FAILURE) {
-        printf("\n\033[31mFAIL\033[0m\n");
-        exit(LEXER_EXIT_STATUS);
-      }
-      printf("\033[32mOK\033[0m\n");
-      printf("Tokens: \n");
+      scan_tokens(&lexer);
       for (size_t i = 0; (int)i < arrlen(lexer.tokens); i++) {
         display_token(&lexer.tokens[i]);
-        // debug_token(&lexer.tokens[i]);
       }
-
-
-      exit(0);
+      if (lexer.had_error) {
+        fprintf(stderr, "ERROR: \033[31mFAIL\033[0m\n");
+        exit(LEXER_EXIT_FAILURE);
+      }
+      free_lexer(&lexer);
+      exit(EXIT_SUCCESS);
     }
-
-    free(file_contents);
   } else {
-    fprintf(stderr, "Unknown command: %s\n", command);
-    return 1;
+    fprintf(stderr, "ERROR: Unknown command: %s\n", command);
+    usage();
+    return EXIT_FAILURE;
   }
 
-  return 0;
+  return EXIT_SUCCESS;
 }

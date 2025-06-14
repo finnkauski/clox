@@ -5,10 +5,9 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #define TOKEN_TYPE_LEN 41
-#define LEXER_EXIT_STATUS 9
+#define LEXER_EXIT_FAILURE 9
 
 #include "stb_ds.h"
-
 
 typedef enum {
     LEXER_SUCCESS,
@@ -100,6 +99,7 @@ typedef struct {
   const char *current;
   const char *source;
   size_t source_len;
+  const char* source_filename;
 
   Token* tokens;  // Vec<Token>
 
@@ -115,12 +115,8 @@ typedef struct {
     Lexer lexer;
 } Lox ;
 
-Lexer init_lexer(const char* source);
+Lexer init_lexer(const char* filename, const char* source);
 void free_lexer(Lexer* lexer);
-void debug_lexer(const Lexer* lexer);
-LexerStatus scan_tokens(Lexer* lexer);
-
-void display_token(const Token* token);
-void debug_token(const Token* token);
-
+void scan_tokens(Lexer* lexer);
+Token next_token(Lexer* lexer);
 #endif // LEXER_H

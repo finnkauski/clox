@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
   } else {
     fprintf(stderr, ERROR ": Unknown command: %s\n", command);
     usage();
-    return EXIT_FAILURE;
+    return 64;
   }
 
   return EXIT_SUCCESS;

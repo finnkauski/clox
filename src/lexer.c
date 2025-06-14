@@ -2,8 +2,12 @@
 #include "utils.h"
 #include <ctype.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+
+#define MAX_NUMBER_DIGITS 256
 
 // Convenience mappings.
 const char *TOKEN_NAMES[TOKEN_TYPE_LEN] = {
@@ -28,6 +32,7 @@ const char *TOKEN_NAMES[TOKEN_TYPE_LEN] = {
     [TOKEN_LESS] = "LESS",
     [TOKEN_LESS_EQUAL] = "LESS_EQUAL",
     [TOKEN_STRING] = "STRING",
+    [TOKEN_NUMBER] = "NUMBER",
     [TOKEN_EOF] = "EOF",
 };
 
@@ -125,8 +130,7 @@ Token token_at(Lexer *lexer, TokenType type, const char *start, Value value) {
 // Simply make a new token with no value
 Token newtoken(Lexer *lexer, TokenType type) {
   const char *start = lexer->current;
-  return token_at(lexer, type, start,
-                  (Value){.type = TYPE_NULL });
+  return token_at(lexer, type, start, (Value){.type = TYPE_NULL});
 }
 
 // If current token matches eat it
@@ -149,6 +153,13 @@ char peek(Lexer *lexer) {
     return '\0';
   debug("Peeked");
   return *lexer->current;
+}
+
+char peekn(Lexer *lexer, uint32_t n) {
+  if (lexer->finished)
+    return '\0';
+  debug("Peeked n: %d", n);
+  return *(lexer->current + n - 1);
 }
 
 // Consume a whole comment
@@ -191,6 +202,38 @@ Token parse_string(Lexer *lexer) {
   Value value = {.type = TYPE_STRING,
                  .as.string_value = {.start = start, .length = length}};
   return token_at(lexer, TOKEN_STRING, start, value);
+}
+
+Token parse_number(Lexer *lexer) {
+  // NOTE: we should have consumed the first digit
+  const char *start = lexer->current - 1;
+  size_t length = 1;
+
+  ASSERT(isdigit(*start;),
+         "Starting character found to be not digit when parsing number");
+
+  bool encountered_dot = false;
+  char c = peek(lexer);
+  while ((isdigit(c) || (c == '.' && !encountered_dot)) && !lexer->finished) {
+    if (c == '.' && !encountered_dot) {
+      // NOTE: make sure that we have a digit after the dot
+      if (!isdigit(peekn(lexer, 2))) {
+        break;
+      }
+      encountered_dot = true;
+    }
+    length++;
+    advance(lexer);
+    c = peek(lexer);
+  }
+  // NOTE: we do this to do the conversion with `strtod`
+  char buf[MAX_NUMBER_DIGITS + 1]; // enough space for number + null terminator
+  memcpy(buf, start, length);
+  buf[length] = '\0';
+
+  Value value = {.type = TYPE_NUMBER, .as.number_value = strtod(buf, NULL)};
+
+  return token_at(lexer, TOKEN_NUMBER, start, value);
 }
 
 void consume_whitespace(Lexer *lexer) {
@@ -250,23 +293,23 @@ Token next_token(Lexer *lexer) {
     break;
   case '/':
     token = match_comment(lexer) ? newtoken(lexer, TOKEN_COMMENT)
-                                  : newtoken(lexer, TOKEN_SLASH);
+                                 : newtoken(lexer, TOKEN_SLASH);
     break;
   case '!':
     token = match(lexer, '=') ? newtoken(lexer, TOKEN_BANG_EQUAL)
-                               : newtoken(lexer, TOKEN_BANG);
+                              : newtoken(lexer, TOKEN_BANG);
     break;
   case '=':
     token = match(lexer, '=') ? newtoken(lexer, TOKEN_EQUAL_EQUAL)
-                               : newtoken(lexer, TOKEN_EQUAL);
+                              : newtoken(lexer, TOKEN_EQUAL);
     break;
   case '>':
     token = match(lexer, '=') ? newtoken(lexer, TOKEN_GREATER_EQUAL)
-                               : newtoken(lexer, TOKEN_GREATER);
+                              : newtoken(lexer, TOKEN_GREATER);
     break;
   case '<':
     token = match(lexer, '=') ? newtoken(lexer, TOKEN_LESS_EQUAL)
-                               : newtoken(lexer, TOKEN_LESS);
+                              : newtoken(lexer, TOKEN_LESS);
     break;
   case '"':
     token = parse_string(lexer);
@@ -277,16 +320,19 @@ Token next_token(Lexer *lexer) {
     break;
 
   default:
-    // NOTE: doesn't change lexer state the current in the case of failure;
-    errorf(lexer->source_filename, lexer->line, lexer->line_offset,
-          "Unexpected character: %c", c);
-    lexer->had_error = true;
-    token = newtoken(lexer, TOKEN_ERROR);
+    if (isdigit(c)) {
+      token = parse_number(lexer);
+    } else {
+      // NOTE: doesn't change lexer state the current in the case of failure;
+      errorf(lexer->source_filename, lexer->line, lexer->line_offset,
+             "Unexpected character: %c", c);
+      lexer->had_error = true;
+      token = newtoken(lexer, TOKEN_ERROR);
+    }
   }
 
   return token;
 }
-
 
 void scan_tokens(Lexer *lexer) {
   while ((size_t)(lexer->current - lexer->source) < lexer->source_len) {
@@ -300,6 +346,7 @@ void scan_tokens(Lexer *lexer) {
     if (token.type != TOKEN_COMMENT && token.type != TOKEN_ERROR)
       arrput(lexer->tokens, token);
 
-    if (lexer->finished) break;
+    if (lexer->finished)
+      break;
   }
 }

@@ -4,7 +4,6 @@
 
 "Hello World"
 
-&
 ((
  {{ . }}, {{ -+* }}; !=,
  // Hello world comment
@@ -16,8 +15,11 @@
  <=< //comment
 ))
 /
+)
 // COMMENT
 // COMMENT2
 
 
-123$
+123.10.20.30.40
+100
+123.00

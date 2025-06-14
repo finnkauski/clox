@@ -76,7 +76,7 @@ typedef struct {
 typedef struct {
     ValueType type;
     union {
-        float number_value;
+        double number_value;
         String string_value;
     } as;
 } Value;

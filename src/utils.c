@@ -55,7 +55,7 @@ void debug_token_value(const Value *value) {
     fprintf(stderr, "\"\n");
     break;
   case TYPE_NUMBER:
-    fprintf(stderr, "Number\n");
+    fprintf(stderr, "%f\n", value->as.number_value);
     break;
   default:
     fprintf(stderr, "UNKNOWN");
@@ -88,7 +88,7 @@ void display_token(const Token *token) {
     printf("\"");
     break;
   case TYPE_NUMBER:
-    printf(" Number\n");
+    printf(" %f", token->value.as.number_value);
     break;
   }
   printf("\n");

@@ -4,9 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void usage() {
-    fprintf(stderr, "Usage: clox tokenize <filename>\n");
-}
+void usage() { fprintf(stderr, "Usage: clox tokenize <filename>\n"); }
 
 int main(int argc, char *argv[]) {
   // TODO: do we need this ?
@@ -26,6 +24,9 @@ int main(int argc, char *argv[]) {
   if (strcmp(command, "tokenize") == 0) {
     // Read file
     char *file_contents = read_file_contents(argv[2]);
+    if (file_contents == NULL) {
+      exit(LEXER_EXIT_FAILURE);
+    }
 
     ASSERT(strlen(file_contents) > 0,
            "File read output is less than or equal to.");
@@ -38,14 +39,15 @@ int main(int argc, char *argv[]) {
         display_token(&lexer.tokens[i]);
       }
       if (lexer.had_error) {
-        fprintf(stderr, "ERROR: \033[31mFAIL\033[0m\n");
+        fprintf(stderr, ERROR ": lexer had errors [%s].\n",
+                argv[2]);
         exit(LEXER_EXIT_FAILURE);
       }
       free_lexer(&lexer);
       exit(EXIT_SUCCESS);
     }
   } else {
-    fprintf(stderr, "ERROR: Unknown command: %s\n", command);
+    fprintf(stderr, ERROR ": Unknown command: %s\n", command);
     usage();
     return EXIT_FAILURE;
   }

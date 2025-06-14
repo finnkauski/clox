@@ -3,6 +3,10 @@
 #include "lexer.h"
 #include <stdio.h>
 
+#define RED_START "\033[31m"
+#define RED_END "\033[0m"
+#define ERROR RED_START "ERROR" RED_END 
+
 #define DEBUG 0
 #if DEBUG
 

@@ -144,7 +144,7 @@ void errorf(const char *filename, size_t line, size_t line_offset,
             const char *fmt, ...) {
   va_list args;
   va_start(args, fmt);
-  fprintf(stderr, "%s:%zu:%zu ", filename, line + 1, line_offset);
+  fprintf(stderr, ERROR": %s:%zu:%zu ", filename, line + 1, line_offset);
   vfprintf(stderr, fmt, args);
   fprintf(stderr, "\n");
   va_end(args);

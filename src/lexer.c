@@ -9,6 +9,17 @@
 
 #define MAX_NUMBER_DIGITS 256
 
+TokenType identifier_type(const char *start, uint32_t length) {
+  for (size_t i = 0; i < (sizeof(KEYWORDS) / sizeof(KEYWORDS[0])); ++i) {
+    const char *keyword = KEYWORDS[i].keyword;
+    size_t kw_len = strlen(keyword);
+    if (length == kw_len && strncmp(start, keyword, length) == 0) {
+      return KEYWORDS[i].type;
+    }
+  }
+  return TOKEN_IDENTIFIER;
+}
+
 // Convenience mappings.
 const char *TOKEN_NAMES[TOKEN_TYPE_LEN] = {
     [TOKEN_LEFT_PAREN] = "LEFT_PAREN",
@@ -31,23 +42,69 @@ const char *TOKEN_NAMES[TOKEN_TYPE_LEN] = {
     [TOKEN_GREATER_EQUAL] = "GREATER_EQUAL",
     [TOKEN_LESS] = "LESS",
     [TOKEN_LESS_EQUAL] = "LESS_EQUAL",
+    [TOKEN_IDENTIFIER] = "IDENTIFIER",
     [TOKEN_STRING] = "STRING",
     [TOKEN_NUMBER] = "NUMBER",
+    [TOKEN_AND] = "AND",
+    [TOKEN_CLASS] = "CLASS",
+    [TOKEN_ELSE] = "ELSE",
+    [TOKEN_FALSE] = "FALSE",
+    [TOKEN_FOR] = "FOR",
+    [TOKEN_FUN] = "FUN",
+    [TOKEN_IF] = "IF",
+    [TOKEN_NIL] = "NIL",
+    [TOKEN_OR] = "OR",
+    [TOKEN_PRINT] = "PRINT",
+    [TOKEN_RETURN] = "RETURN",
+    [TOKEN_SUPER] = "SUPER",
+    [TOKEN_THIS] = "THIS",
+    [TOKEN_TRUE] = "TRUE",
+    [TOKEN_VAR] = "VAR",
+    [TOKEN_WHILE] = "WHILE",
     [TOKEN_EOF] = "EOF",
 };
 
 const char *TOKEN_VALUES[TOKEN_TYPE_LEN] = {
-    [TOKEN_LEFT_PAREN] = "(",    [TOKEN_RIGHT_PAREN] = ")",
-    [TOKEN_LEFT_BRACE] = "{",    [TOKEN_RIGHT_BRACE] = "}",
-    [TOKEN_COMMA] = ",",         [TOKEN_COMMENT] = "// ... \\n",
-    [TOKEN_DOT] = ".",           [TOKEN_MINUS] = "-",
-    [TOKEN_PLUS] = "+",          [TOKEN_SEMICOLON] = ";",
-    [TOKEN_SLASH] = "/",         [TOKEN_STAR] = "*",
-    [TOKEN_BANG] = "!",          [TOKEN_BANG_EQUAL] = "!=",
-    [TOKEN_EQUAL] = "=",         [TOKEN_EQUAL_EQUAL] = "==",
-    [TOKEN_GREATER] = ">",       [TOKEN_GREATER_EQUAL] = ">=",
-    [TOKEN_LESS] = "<",          [TOKEN_LESS_EQUAL] = "<=",
-    [TOKEN_STRING] = "'STRING'", [TOKEN_EOF] = "",
+    [TOKEN_LEFT_PAREN] = "(",
+    [TOKEN_RIGHT_PAREN] = ")",
+    [TOKEN_LEFT_BRACE] = "{",
+    [TOKEN_RIGHT_BRACE] = "}",
+    [TOKEN_COMMA] = ",",
+    [TOKEN_COMMENT] = "// ... \\n",
+    [TOKEN_DOT] = ".",
+    [TOKEN_MINUS] = "-",
+    [TOKEN_PLUS] = "+",
+    [TOKEN_SEMICOLON] = ";",
+    [TOKEN_SLASH] = "/",
+    [TOKEN_STAR] = "*",
+    [TOKEN_BANG] = "!",
+    [TOKEN_BANG_EQUAL] = "!=",
+    [TOKEN_EQUAL] = "=",
+    [TOKEN_EQUAL_EQUAL] = "==",
+    [TOKEN_GREATER] = ">",
+    [TOKEN_GREATER_EQUAL] = ">=",
+    [TOKEN_LESS] = "<",
+    [TOKEN_LESS_EQUAL] = "<=",
+    [TOKEN_IDENTIFIER] = "'IDENTIFIER'",
+    [TOKEN_STRING] = "'STRING'",
+    [TOKEN_NUMBER] = "NUMBER",
+    [TOKEN_AND] = "AND",
+    [TOKEN_CLASS] = "CLASS",
+    [TOKEN_ELSE] = "ELSE",
+    [TOKEN_FALSE] = "FALSE",
+    [TOKEN_FOR] = "FOR",
+    [TOKEN_FUN] = "FUN",
+    [TOKEN_IF] = "IF",
+    [TOKEN_NIL] = "NIL",
+    [TOKEN_OR] = "OR",
+    [TOKEN_PRINT] = "PRINT",
+    [TOKEN_RETURN] = "RETURN",
+    [TOKEN_SUPER] = "SUPER",
+    [TOKEN_THIS] = "THIS",
+    [TOKEN_TRUE] = "TRUE",
+    [TOKEN_VAR] = "VAR",
+    [TOKEN_WHILE] = "WHILE",
+    [TOKEN_EOF] = "",
 };
 
 Lexer init_lexer(const char *filename, const char *source) {
@@ -173,6 +230,28 @@ bool match_comment(Lexer *lexer) {
     return true;
   }
   return false;
+}
+
+// Parse identifier
+Token parse_identifier(Lexer *lexer) {
+  // NOTE: we should have consumed the first digit
+  const char *start = lexer->current - 1;
+  size_t length = 1;
+
+  ASSERT(isalpha(*start) || *start == '_',
+         "Starting character for identifier found to be non-alpha");
+
+  char c = peek(lexer);
+  while ((isalnum(c) || c == '_') && !lexer->finished) {
+    length++;
+    advance(lexer);
+    c = peek(lexer);
+  }
+
+  TokenType type = identifier_type(start, length);
+  Value value = {.type = type == TOKEN_IDENTIFIER ? TYPE_IDENTIFIER : TYPE_KEYWORD,
+                 .as.string_value = {.start = start, .length = length}};
+  return token_at(lexer, type, start, value);
 }
 
 // Parse a string token
@@ -322,6 +401,8 @@ Token next_token(Lexer *lexer) {
   default:
     if (isdigit(c)) {
       token = parse_number(lexer);
+    } else if (isalpha(c) || c == '_') {
+      token = parse_identifier(lexer);
     } else {
       // NOTE: doesn't change lexer state the current in the case of failure;
       errorf(lexer->source_filename, lexer->line, lexer->line_offset,

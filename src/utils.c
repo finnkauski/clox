@@ -47,6 +47,15 @@ void debug_token_value(const Value *value) {
   case TYPE_NULL:
     fprintf(stderr, "None\n");
     break;
+  case TYPE_IDENTIFIER:
+    fprintf(stderr, "Identifier [");
+    for (size_t i = 0; i < value->as.string_value.length; i++) {
+      fprintf(stderr, "%c", value->as.string_value.start[i]);
+    }
+    fprintf(stderr, "]\n");
+    break;
+  case TYPE_KEYWORD:
+    break;
   case TYPE_STRING:
     fprintf(stderr, "String \"");
     for (size_t i = 0; i < value->as.string_value.length; i++) {
@@ -79,6 +88,15 @@ void display_token(const Token *token) {
   printf("%s", TOKEN_NAMES[token->type]);
   switch (token->value.type) {
   case TYPE_NULL:
+    break;
+  case TYPE_IDENTIFIER:
+    printf(" [");
+    for (size_t i = 0; i < token->value.as.string_value.length; i++) {
+      printf("%c", token->value.as.string_value.start[i]);
+    }
+    printf("]");
+    break;
+  case TYPE_KEYWORD:
     break;
   case TYPE_STRING:
     printf(" \"");

@@ -4,7 +4,6 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
-#define TOKEN_TYPE_LEN 41
 #define LEXER_EXIT_FAILURE 9
 
 #include "stb_ds.h"
@@ -57,13 +56,39 @@ typedef enum {
   TOKEN_ERROR,
   TOKEN_EOF
 } TokenType;
+#define TOKEN_TYPE_LEN 41
 
 extern const char* TOKEN_VALUES[TOKEN_TYPE_LEN];
 extern const char* TOKEN_NAMES[TOKEN_TYPE_LEN];
 
+typedef struct {
+    const char* keyword;
+    TokenType type;
+} Keyword;
+
+static const Keyword KEYWORDS[] = {
+    {"and",    TOKEN_AND},
+    {"class",  TOKEN_CLASS},
+    {"else",   TOKEN_ELSE},
+    {"false",  TOKEN_FALSE},
+    {"for",    TOKEN_FOR},
+    {"fun",    TOKEN_FUN},
+    {"if",     TOKEN_IF},
+    {"nil",    TOKEN_NIL},
+    {"or",     TOKEN_OR},
+    {"print",  TOKEN_PRINT},
+    {"return", TOKEN_RETURN},
+    {"super",  TOKEN_SUPER},
+    {"this",   TOKEN_THIS},
+    {"true",   TOKEN_TRUE},
+    {"var",    TOKEN_VAR},
+    {"while",  TOKEN_WHILE}
+};
 
 typedef enum {
     TYPE_NULL,
+    TYPE_IDENTIFIER,
+    TYPE_KEYWORD,
     TYPE_NUMBER,
     TYPE_STRING
 } ValueType;

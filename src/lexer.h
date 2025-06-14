@@ -64,8 +64,7 @@ extern const char* TOKEN_NAMES[TOKEN_TYPE_LEN];
 
 typedef enum {
     TYPE_NULL,
-    TYPE_INT,
-    TYPE_FLOAT,
+    TYPE_NUMBER,
     TYPE_STRING
 } ValueType;
 
@@ -77,9 +76,7 @@ typedef struct {
 typedef struct {
     ValueType type;
     union {
-        void* none;
-        int int_value;
-        float float_value;
+        float number_value;
         String string_value;
     } as;
 } Value;

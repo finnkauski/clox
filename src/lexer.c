@@ -77,28 +77,12 @@ void free_lexer(Lexer *lexer) {
          "Lexer `tokens` is not a null pointer after free.");
 }
 
-// Prints a preview onto the stderr of the characters.
-void preview_lexer(Lexer *lexer) {
-  fprintf(stderr, "<|");
-  for (int debug_i = 0; debug_i < 10; debug_i++) {
-    if (lexer->current[debug_i] == '\0')
-      break;
-    if (isprint(lexer->current[debug_i])) {
-      fprintf(stderr, "%c", lexer->current[debug_i]);
-    } else {
-      // fprintf(stderr, "\\x%02X", lexer->current[debug_i]);
-      fprintf(stderr, "\\?");
-    }
-  };
-  fprintf(stderr, "|>\n");
-}
-
 // Error
 void errorf(const char *filename, size_t line, size_t line_offset,
             const char *fmt, ...) {
   va_list args;
   va_start(args, fmt);
-  fprintf(stderr, "%s:%zu:%zu ", filename, line, line_offset);
+  fprintf(stderr, "%s:%zu:%zu ", filename, line + 1, line_offset);
   vfprintf(stderr, fmt, args);
   fprintf(stderr, "\n");
   va_end(args);
@@ -116,12 +100,12 @@ char advance(Lexer *lexer) {
 
   debug("Advanced: %c", c);
 
-  ASSERT((c != '\0') || lexer->finished, "Tried advancing a finished parser.");
+  ASSERT(c != '\0' || !lexer->finished, "Tried advancing a finished parser.");
 
   lexer->current++;
   // After consuming the whole string the final current pointer
   // will point to the null character.
-  if (*lexer->current == '\0') {
+  if (c == '\0') {
     lexer->finished = true;
     debug("Lexer finished");
   } else {
@@ -142,7 +126,7 @@ Token token_at(Lexer *lexer, TokenType type, const char *start, Value value) {
 Token newtoken(Lexer *lexer, TokenType type) {
   const char *start = lexer->current;
   return token_at(lexer, type, start,
-                  (Value){.type = TYPE_NULL, .as.none = NULL});
+                  (Value){.type = TYPE_NULL });
 }
 
 // If current token matches eat it
@@ -209,7 +193,28 @@ Token parse_string(Lexer *lexer) {
   return token_at(lexer, TOKEN_STRING, start, value);
 }
 
+void consume_whitespace(Lexer *lexer) {
+  // Indicates if we consumed any whitespace
+  ASSERT(lexer->current != NULL,
+         "Lexer current is NULL while consuming whitespace");
+  while (isspace(*lexer->current)) {
+    if (*lexer->current == '\n') {
+      debug("Consuming WHITESPACE ('\\n')");
+      lexer->line++;
+      advance(lexer);
+      lexer->line_offset = 0; // RESET the line_offset
+    } else {
+      debug("Consuming WHITESPACE");
+      advance(lexer);
+    }
+  }
+}
+
 Token next_token(Lexer *lexer) {
+  ASSERT(!lexer->finished, "Tried to fetch next token from a finished lexer");
+
+  consume_whitespace(lexer);
+
   Token token;
   char c = advance(lexer);
   switch (c) {
@@ -266,6 +271,11 @@ Token next_token(Lexer *lexer) {
   case '"':
     token = parse_string(lexer);
     break;
+
+  case '\0':
+    token = newtoken(lexer, TOKEN_EOF);
+    break;
+
   default:
     // NOTE: doesn't change lexer state the current in the case of failure;
     errorf(lexer->source_filename, lexer->line, lexer->line_offset,
@@ -277,41 +287,19 @@ Token next_token(Lexer *lexer) {
   return token;
 }
 
-LexerStatus consume_whitespace(Lexer *lexer) {
-  // Indicates if we consumed any whitespace
-  LexerStatus status = LEXER_FAILURE;
-  ASSERT(lexer->current != NULL,
-         "Lexer current is NULL while consuming whitespace");
-  while (isspace(*lexer->current)) {
-    if (*lexer->current == '\n') {
-      debug("Consuming WHITESPACE ('\\n')");
-      lexer->line++;
-      advance(lexer);
-      lexer->line_offset = 0; // RESET the line_offset
-    } else {
-      debug("Consuming WHITESPACE");
-      advance(lexer);
-    }
-    status = LEXER_SUCCESS;
-  }
-  return status;
-}
 
 void scan_tokens(Lexer *lexer) {
   while ((size_t)(lexer->current - lexer->source) < lexer->source_len) {
     ASSERT(lexer->current != NULL,
            "NULL `current` found for the given lexer inside of scan_token");
 
-    debug_block({ preview_lexer(lexer); });
-
-    // Consume whitespace advances the lexer, we might be out of text
-    // so loop back to check while loop condition;
-    if (consume_whitespace(lexer) == LEXER_SUCCESS)
-      continue;
+    debug_block({ preview_string(lexer->current); });
 
     Token token = next_token(lexer);
 
     if (token.type != TOKEN_COMMENT && token.type != TOKEN_ERROR)
       arrput(lexer->tokens, token);
+
+    if (lexer->finished) break;
   }
 }

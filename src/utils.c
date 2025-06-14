@@ -54,11 +54,8 @@ void debug_token_value(const Value *value) {
     }
     fprintf(stderr, "\"\n");
     break;
-  case TYPE_INT:
-    fprintf(stderr, "Int\n");
-    break;
-  case TYPE_FLOAT:
-    fprintf(stderr, "Float\n");
+  case TYPE_NUMBER:
+    fprintf(stderr, "Number\n");
     break;
   default:
     fprintf(stderr, "UNKNOWN");
@@ -90,11 +87,8 @@ void display_token(const Token *token) {
     }
     printf("\"");
     break;
-  case TYPE_INT:
-    printf(" Int\n");
-    break;
-  case TYPE_FLOAT:
-    printf(" Float\n");
+  case TYPE_NUMBER:
+    printf(" Number\n");
     break;
   }
   printf("\n");

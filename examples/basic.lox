@@ -1,0 +1,34 @@
+// Compute the nth Fibonacci number recursively
+fun fib(n) {
+  if (n <= 1) return n;
+  return fib(n - 2) + fib(n - 1);
+}
+
+print fib(10); // should print 55
+
+// Demonstrate variable scoping
+{
+  var a = "outer";
+  {
+    var a = "inner";
+    print a; // prints "inner"
+  }
+  print a; // prints "outer"
+}
+
+// Class with method and constructor
+class Counter {
+  init(start) {
+    this.count = start;
+  }
+
+  inc() {
+    this.count = this.count + 1;
+    return this.count;
+  }
+}
+
+var c = Counter(10);
+print c.inc(); // 11
+print c.inc(); // 12
+

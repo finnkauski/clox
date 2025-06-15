@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "utils.h"
+#include "lexer.h"
 
 char *read_file_contents(const char *filename) {
   FILE *file = fopen(filename, "r");
@@ -49,12 +50,13 @@ void debug_token_value(const Value *value) {
     break;
   case TYPE_IDENTIFIER:
     fprintf(stderr, "Identifier [");
-    for (size_t i = 0; i < value->as.string_value.length; i++) {
-      fprintf(stderr, "%c", value->as.string_value.start[i]);
+    for (size_t i = 0; i < value->as.identifier_value.length; i++) {
+      fprintf(stderr, "%c", value->as.identifier_value.start[i]);
     }
     fprintf(stderr, "]\n");
     break;
-  case TYPE_KEYWORD:
+  case TYPE_BOOL:
+    printf(value->as.bool_value ? " [true]" : " [false]");
     break;
   case TYPE_STRING:
     fprintf(stderr, "String \"");
@@ -74,7 +76,7 @@ void debug_token_value(const Value *value) {
 // Printing and displaying
 void debug_token(const Token *token) {
   fprintf(stderr, "Token {\n");
-  fprintf(stderr, " type: %s\n", TOKEN_NAMES[token->type]);
+  fprintf(stderr, " type: %s\n", TOKEN_REPRESENTATIONS[token->type].name);
   fprintf(stderr,
           " line: %zu\n"
           " start: %p\n"
@@ -85,18 +87,19 @@ void debug_token(const Token *token) {
 }
 
 void display_token(const Token *token) {
-  printf("%s", TOKEN_NAMES[token->type]);
+  printf("%s", TOKEN_REPRESENTATIONS[token->type].name);
   switch (token->value.type) {
   case TYPE_NULL:
     break;
   case TYPE_IDENTIFIER:
     printf(" [");
-    for (size_t i = 0; i < token->value.as.string_value.length; i++) {
-      printf("%c", token->value.as.string_value.start[i]);
+    for (size_t i = 0; i < token->value.as.identifier_value.length; i++) {
+      printf("%c", token->value.as.identifier_value.start[i]);
     }
     printf("]");
     break;
-  case TYPE_KEYWORD:
+  case TYPE_BOOL:
+    printf(token->value.as.bool_value ? " [true]" : " [false]");
     break;
   case TYPE_STRING:
     printf(" \"");

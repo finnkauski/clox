@@ -14,6 +14,7 @@ int main(int argc, char **argv) {
   nob_cmd_append(&cmd, "-I" SRC_FOLDER);
   nob_cmd_append(&cmd, "-o", "clox");
   nob_cmd_append(&cmd, SRC_FOLDER "main.c");
+  nob_cmd_append(&cmd, SRC_FOLDER "ast.c");
   nob_cmd_append(&cmd, SRC_FOLDER "lexer.c");
   nob_cmd_append(&cmd, SRC_FOLDER "stb_ds.c");
   nob_cmd_append(&cmd, SRC_FOLDER "utils.c");

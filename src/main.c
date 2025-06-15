@@ -1,3 +1,4 @@
+#include "ast.h"
 #include "lexer.h"
 #include "utils.h"
 #include <stdio.h>
@@ -39,13 +40,44 @@ int main(int argc, char *argv[]) {
         display_token(&lexer.tokens[i]);
       }
       if (lexer.had_error) {
-        fprintf(stderr, ERROR ": lexer had errors [%s].\n",
-                argv[2]);
+        fprintf(stderr, ERROR ": lexer had errors [%s].\n", argv[2]);
         exit(LEXER_EXIT_FAILURE);
       }
       free_lexer(&lexer);
       exit(EXIT_SUCCESS);
     }
+  } else if (strcmp(command, "parse") == 0) {
+
+    const char *string = "hello";
+    Expr left = {
+        .type = EXPR_LITERAL,
+        .value = {
+            .literal = {.type = TOKEN_STRING,
+                        .value = {.type = TYPE_STRING,
+                                  .as = {.string_value = {.start = string,
+                                                          .length = 6}}}}}};
+    Expr right_inner = {.type = EXPR_LITERAL,
+                        .value = {.literal = {
+                                      .type = TOKEN_NIL,
+                                  }}};
+
+    Expr right = {.type = EXPR_BINARY,
+                  .value = {.binary = {
+                                .left = &left,
+                                .op = {.type = TOKEN_MINUS},
+                                .right = &right_inner,
+                            }}};
+
+    Expr expr = {.type = EXPR_BINARY,
+                 .value = {.binary = {
+                               .left = &left,
+                               .op = {.type = TOKEN_MINUS},
+                               .right = &right,
+                           }}};
+
+    Expr grouping = {.type = EXPR_GROUPING,
+                     .value = {.grouping = {.expression = &expr}}};
+    expr_accept(&grouping, (ExprVisitor *)&AstPrinter);
   } else {
     fprintf(stderr, ERROR ": Unknown command: %s\n", command);
     usage();

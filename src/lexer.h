@@ -4,7 +4,8 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
-#define LEXER_EXIT_FAILURE 9
+#define LEXER_EXIT_FAILURE 1
+#define MAX_NUMBER_DIGITS 256
 
 #include "stb_ds.h"
 
@@ -58,14 +59,19 @@ typedef enum {
 } TokenType;
 #define TOKEN_TYPE_LEN 41
 
-extern const char* TOKEN_VALUES[TOKEN_TYPE_LEN];
-extern const char* TOKEN_NAMES[TOKEN_TYPE_LEN];
+typedef struct {
+    const char* name;
+    const char * symbol;
+} TokenRepr;
+
+extern const TokenRepr TOKEN_REPRESENTATIONS[TOKEN_TYPE_LEN];
 
 typedef struct {
     const char* keyword;
     TokenType type;
 } Keyword;
 
+// TODO: token TOKEN_REPRESENTATIONS has this data
 static const Keyword KEYWORDS[] = {
     {"and",    TOKEN_AND},
     {"class",  TOKEN_CLASS},
@@ -85,13 +91,6 @@ static const Keyword KEYWORDS[] = {
     {"while",  TOKEN_WHILE}
 };
 
-typedef enum {
-    TYPE_NULL,
-    TYPE_IDENTIFIER,
-    TYPE_KEYWORD,
-    TYPE_NUMBER,
-    TYPE_STRING
-} ValueType;
 
 typedef struct {
     const char* start;
@@ -99,10 +98,18 @@ typedef struct {
 } String;
 
 typedef struct {
-    ValueType type;
+    enum {
+        TYPE_NULL,
+        TYPE_IDENTIFIER,
+        TYPE_BOOL,
+        TYPE_NUMBER,
+        TYPE_STRING
+    } type;
     union {
-        double number_value;
+        String identifier_value;
         String string_value;
+        double number_value;
+        bool bool_value;
     } as;
 } Value;
 
@@ -115,6 +122,11 @@ typedef struct {
   // maybe parsed value
   Value value;
 } Token;
+
+#define PRINT_AS_STRING(KIND, TOKEN)                                   \
+  for (size_t i = 0; i < (TOKEN)->value.as.KIND##_value.length; i++) { \
+    printf("%c", (TOKEN)->value.as.KIND##_value.start[i]);             \
+  }                                                                    \
 
 
 typedef struct {

@@ -7,7 +7,50 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_NUMBER_DIGITS 256
+// Convenience mappings.
+const TokenRepr TOKEN_REPRESENTATIONS[TOKEN_TYPE_LEN] = {
+    [TOKEN_LEFT_PAREN] = {.name = "LEFT_PAREN", .symbol = "("},
+    [TOKEN_RIGHT_PAREN] = {.name = "RIGHT_PAREN", .symbol = ")"},
+    [TOKEN_LEFT_BRACE] = {.name = "LEFT_BRACE", .symbol = "{"},
+    [TOKEN_RIGHT_BRACE] = {.name = "RIGHT_BRACE", .symbol = "}"},
+    [TOKEN_COMMA] = {.name = "COMMA", .symbol = ","},
+    [TOKEN_COMMENT] = {.name = "COMMENT", .symbol = "// ... \\n"},
+    [TOKEN_DOT] = {.name = "DOT", .symbol = "."},
+    [TOKEN_MINUS] = {.name = "MINUS", .symbol = "-"},
+    [TOKEN_PLUS] = {.name = "PLUS", .symbol = "+"},
+    [TOKEN_SEMICOLON] = {.name = "SEMICOLON", .symbol = ";"},
+    [TOKEN_SLASH] = {.name = "SLASH", .symbol = "/"},
+    [TOKEN_STAR] = {.name = "STAR", .symbol = "*"},
+    [TOKEN_BANG] = {.name = "BANG", .symbol = "!"},
+    [TOKEN_BANG_EQUAL] = {.name = "BANG_EQUAL", .symbol = "!="},
+    [TOKEN_EQUAL] = {.name = "EQUAL", .symbol = "="},
+    [TOKEN_EQUAL_EQUAL] = {.name = "EQUAL_EQUAL", .symbol = "=="},
+    [TOKEN_GREATER] = {.name = "GREATER", .symbol = ">"},
+    [TOKEN_GREATER_EQUAL] = {.name = "GREATER_EQUAL", .symbol = ">="},
+    [TOKEN_LESS] = {.name = "LESS", .symbol = "<"},
+    [TOKEN_LESS_EQUAL] = {.name = "LESS_EQUAL", .symbol = "<="},
+    [TOKEN_IDENTIFIER] = {.name = "IDENTIFIER", .symbol = "'IDENTIFIER'"},
+    [TOKEN_STRING] = {.name = "STRING", .symbol = "'STRING'"},
+    [TOKEN_NUMBER] = {.name = "NUMBER", .symbol = "NUMBER"},
+    // Keywords
+    [TOKEN_AND] = {.name = "AND", .symbol = "and"},
+    [TOKEN_CLASS] = {.name = "CLASS", .symbol = "class"},
+    [TOKEN_ELSE] = {.name = "ELSE", .symbol = "else"},
+    [TOKEN_FALSE] = {.name = "FALSE", .symbol = "false"},
+    [TOKEN_FOR] = {.name = "FOR", .symbol = "for"},
+    [TOKEN_FUN] = {.name = "FUN", .symbol = "fun"},
+    [TOKEN_IF] = {.name = "IF", .symbol = "if"},
+    [TOKEN_NIL] = {.name = "NIL", .symbol = "nil"},
+    [TOKEN_OR] = {.name = "OR", .symbol = "or"},
+    [TOKEN_PRINT] = {.name = "PRINT", .symbol = "print"},
+    [TOKEN_RETURN] = {.name = "RETURN", .symbol = "return"},
+    [TOKEN_SUPER] = {.name = "SUPER", .symbol = "super"},
+    [TOKEN_THIS] = {.name = "THIS", .symbol = "this"},
+    [TOKEN_TRUE] = {.name = "TRUE", .symbol = "true"},
+    [TOKEN_VAR] = {.name = "VAR", .symbol = "var"},
+    [TOKEN_WHILE] = {.name = "WHILE", .symbol = "while"},
+    [TOKEN_EOF] = {.name = "EOF", .symbol = "EOS"},
+};
 
 TokenType identifier_type(const char *start, uint32_t length) {
   for (size_t i = 0; i < (sizeof(KEYWORDS) / sizeof(KEYWORDS[0])); ++i) {
@@ -19,93 +62,6 @@ TokenType identifier_type(const char *start, uint32_t length) {
   }
   return TOKEN_IDENTIFIER;
 }
-
-// Convenience mappings.
-const char *TOKEN_NAMES[TOKEN_TYPE_LEN] = {
-    [TOKEN_LEFT_PAREN] = "LEFT_PAREN",
-    [TOKEN_RIGHT_PAREN] = "RIGHT_PAREN",
-    [TOKEN_LEFT_BRACE] = "LEFT_BRACE",
-    [TOKEN_RIGHT_BRACE] = "RIGHT_BRACE",
-    [TOKEN_COMMA] = "COMMA",
-    [TOKEN_COMMENT] = "COMMENT",
-    [TOKEN_DOT] = "DOT",
-    [TOKEN_MINUS] = "MINUS",
-    [TOKEN_PLUS] = "PLUS",
-    [TOKEN_SEMICOLON] = "SEMICOLON",
-    [TOKEN_SLASH] = "SLASH",
-    [TOKEN_STAR] = "STAR",
-    [TOKEN_BANG] = "BANG",
-    [TOKEN_BANG_EQUAL] = "BANG_EQUAL",
-    [TOKEN_EQUAL] = "EQUAL",
-    [TOKEN_EQUAL_EQUAL] = "EQUAL_EQUAL",
-    [TOKEN_GREATER] = "GREATER",
-    [TOKEN_GREATER_EQUAL] = "GREATER_EQUAL",
-    [TOKEN_LESS] = "LESS",
-    [TOKEN_LESS_EQUAL] = "LESS_EQUAL",
-    [TOKEN_IDENTIFIER] = "IDENTIFIER",
-    [TOKEN_STRING] = "STRING",
-    [TOKEN_NUMBER] = "NUMBER",
-    [TOKEN_AND] = "AND",
-    [TOKEN_CLASS] = "CLASS",
-    [TOKEN_ELSE] = "ELSE",
-    [TOKEN_FALSE] = "FALSE",
-    [TOKEN_FOR] = "FOR",
-    [TOKEN_FUN] = "FUN",
-    [TOKEN_IF] = "IF",
-    [TOKEN_NIL] = "NIL",
-    [TOKEN_OR] = "OR",
-    [TOKEN_PRINT] = "PRINT",
-    [TOKEN_RETURN] = "RETURN",
-    [TOKEN_SUPER] = "SUPER",
-    [TOKEN_THIS] = "THIS",
-    [TOKEN_TRUE] = "TRUE",
-    [TOKEN_VAR] = "VAR",
-    [TOKEN_WHILE] = "WHILE",
-    [TOKEN_EOF] = "EOF",
-};
-
-const char *TOKEN_VALUES[TOKEN_TYPE_LEN] = {
-    [TOKEN_LEFT_PAREN] = "(",
-    [TOKEN_RIGHT_PAREN] = ")",
-    [TOKEN_LEFT_BRACE] = "{",
-    [TOKEN_RIGHT_BRACE] = "}",
-    [TOKEN_COMMA] = ",",
-    [TOKEN_COMMENT] = "// ... \\n",
-    [TOKEN_DOT] = ".",
-    [TOKEN_MINUS] = "-",
-    [TOKEN_PLUS] = "+",
-    [TOKEN_SEMICOLON] = ";",
-    [TOKEN_SLASH] = "/",
-    [TOKEN_STAR] = "*",
-    [TOKEN_BANG] = "!",
-    [TOKEN_BANG_EQUAL] = "!=",
-    [TOKEN_EQUAL] = "=",
-    [TOKEN_EQUAL_EQUAL] = "==",
-    [TOKEN_GREATER] = ">",
-    [TOKEN_GREATER_EQUAL] = ">=",
-    [TOKEN_LESS] = "<",
-    [TOKEN_LESS_EQUAL] = "<=",
-    [TOKEN_IDENTIFIER] = "'IDENTIFIER'",
-    [TOKEN_STRING] = "'STRING'",
-    [TOKEN_NUMBER] = "NUMBER",
-    [TOKEN_AND] = "AND",
-    [TOKEN_CLASS] = "CLASS",
-    [TOKEN_ELSE] = "ELSE",
-    [TOKEN_FALSE] = "FALSE",
-    [TOKEN_FOR] = "FOR",
-    [TOKEN_FUN] = "FUN",
-    [TOKEN_IF] = "IF",
-    [TOKEN_NIL] = "NIL",
-    [TOKEN_OR] = "OR",
-    [TOKEN_PRINT] = "PRINT",
-    [TOKEN_RETURN] = "RETURN",
-    [TOKEN_SUPER] = "SUPER",
-    [TOKEN_THIS] = "THIS",
-    [TOKEN_TRUE] = "TRUE",
-    [TOKEN_VAR] = "VAR",
-    [TOKEN_WHILE] = "WHILE",
-    [TOKEN_EOF] = "",
-};
 
 Lexer init_lexer(const char *filename, const char *source) {
   size_t source_len = strlen(source);
@@ -140,11 +96,20 @@ void free_lexer(Lexer *lexer) {
 }
 
 // Error
-void errorf(const char *filename, size_t line, size_t line_offset,
-            const char *fmt, ...) {
+void lex_error(const char *filename, size_t line, size_t line_offset,
+               const char *fmt, ...) {
   va_list args;
   va_start(args, fmt);
-  fprintf(stderr, ERROR": %s:%zu:%zu ", filename, line + 1, line_offset);
+  fprintf(stderr, ERROR ": %s:%zu:%zu ", filename, line + 1, line_offset);
+  vfprintf(stderr, fmt, args);
+  fprintf(stderr, "\n");
+  va_end(args);
+}
+void lex_error_with(Lexer *lexer, const char *fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  fprintf(stderr, ERROR ": %s:%zu:%zu ", lexer->source_filename,
+          lexer->line + 1, lexer->line_offset);
   vfprintf(stderr, fmt, args);
   fprintf(stderr, "\n");
   va_end(args);
@@ -249,8 +214,22 @@ Token parse_identifier(Lexer *lexer) {
   }
 
   TokenType type = identifier_type(start, length);
-  Value value = {.type = type == TOKEN_IDENTIFIER ? TYPE_IDENTIFIER : TYPE_KEYWORD,
-                 .as.string_value = {.start = start, .length = length}};
+  Value value = {0};
+  switch (type) {
+  case TOKEN_IDENTIFIER:
+    value = (Value){.type = TYPE_IDENTIFIER,
+                    .as.identifier_value = {.start = start, .length = length}};
+    break;
+  case TOKEN_TRUE:
+    value = (Value){.type = TYPE_BOOL, .as.bool_value = true};
+    break;
+  case TOKEN_FALSE:
+    value = (Value){.type = TYPE_BOOL, .as.bool_value = false};
+    break;
+  default:
+    break;
+  }
+
   return token_at(lexer, type, start, value);
 }
 
@@ -405,8 +384,7 @@ Token next_token(Lexer *lexer) {
       token = parse_identifier(lexer);
     } else {
       // NOTE: doesn't change lexer state the current in the case of failure;
-      errorf(lexer->source_filename, lexer->line, lexer->line_offset,
-             "Unexpected character: %c", c);
+      lex_error_with(lexer, "Unexpected character: %c", c);
       lexer->had_error = true;
       token = newtoken(lexer, TOKEN_ERROR);
     }

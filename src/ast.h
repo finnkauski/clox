@@ -52,4 +52,22 @@ void* expr_accept(Expr* expr, ExprVisitor* visitor);
 
 extern const ExprVisitor AstPrinter;
 
+typedef struct {
+  Token* current;
+  size_t index;
+  size_t n_tokens;
+  const char* source_filename;
+
+  Token* tokens;  // Vec<Token>
+  Expr* expressions; // Vec<Expr>
+
+  // Runtime helpful flags
+  bool finished;
+  bool had_error;
+ 
+  Expr* root;
+} Parser;
+
+Parser parse(Lexer* lexer);
+void free_parser(Parser* parser);
 #endif  // AST_H

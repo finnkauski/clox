@@ -122,12 +122,12 @@ unsigned long get_offset(const Lexer *lexer) {
   return lexer->current - lexer->source;
 }
 
-char advance(Lexer *lexer) {
+static char advance(Lexer *lexer) {
   char c = *lexer->current;
 
   debug("Advanced: %c", c);
 
-  ASSERT(c != '\0' || !lexer->finished, "Tried advancing a finished parser.");
+  ASSERT(c != '\0' || !lexer->finished, "Tried advancing a finished lexer.");
 
   lexer->current++;
   // After consuming the whole string the final current pointer
@@ -143,20 +143,20 @@ char advance(Lexer *lexer) {
 }
 
 // Token constructor for simple tokens
-Token token_at(Lexer *lexer, TokenType type, const char *start, Value value) {
-  debug("Creating new token: %s", TOKEN_NAMES[type]);
+static Token token_at(Lexer *lexer, TokenType type, const char *start, Value value) {
+  debug("Creating new token: %s", TOKEN_REPRESENTATIONS[type].name);
   return (Token){
       .type = type, .line = lexer->line, .start = start, .value = value};
 }
 
 // Simply make a new token with no value
-Token newtoken(Lexer *lexer, TokenType type) {
+static Token newtoken(Lexer *lexer, TokenType type) {
   const char *start = lexer->current;
   return token_at(lexer, type, start, (Value){.type = TYPE_NULL});
 }
 
 // If current token matches eat it
-bool match(Lexer *lexer, const char expected) {
+static bool match(Lexer *lexer, const char expected) {
   // NOTE: reason here we don't increment is because in scanning
   // We are already incrementing so we want to check if the current
   // character matches and if it does we consume
@@ -170,14 +170,14 @@ bool match(Lexer *lexer, const char expected) {
 }
 
 // Get current token
-char peek(Lexer *lexer) {
+static char peek(Lexer *lexer) {
   if (lexer->finished)
     return '\0';
   debug("Peeked");
   return *lexer->current;
 }
 
-char peekn(Lexer *lexer, uint32_t n) {
+static char peekn(Lexer *lexer, uint32_t n) {
   if (lexer->finished)
     return '\0';
   debug("Peeked n: %d", n);
@@ -185,7 +185,7 @@ char peekn(Lexer *lexer, uint32_t n) {
 }
 
 // Consume a whole comment
-bool match_comment(Lexer *lexer) {
+static bool match_comment(Lexer *lexer) {
   if (match(lexer, '/')) {
     debug("Matched comment");
     while ((peek(lexer) != '\n') && !lexer->finished) {
@@ -198,7 +198,7 @@ bool match_comment(Lexer *lexer) {
 }
 
 // Parse identifier
-Token parse_identifier(Lexer *lexer) {
+static Token parse_identifier(Lexer *lexer) {
   // NOTE: we should have consumed the first digit
   const char *start = lexer->current - 1;
   size_t length = 1;
@@ -234,7 +234,7 @@ Token parse_identifier(Lexer *lexer) {
 }
 
 // Parse a string token
-Token parse_string(Lexer *lexer) {
+static Token parse_string(Lexer *lexer) {
   const char *start = lexer->current;
   size_t length = 0;
 
@@ -262,12 +262,12 @@ Token parse_string(Lexer *lexer) {
   return token_at(lexer, TOKEN_STRING, start, value);
 }
 
-Token parse_number(Lexer *lexer) {
+static Token parse_number(Lexer *lexer) {
   // NOTE: we should have consumed the first digit
   const char *start = lexer->current - 1;
   size_t length = 1;
 
-  ASSERT(isdigit(*start;),
+  ASSERT(isdigit(*start),
          "Starting character found to be not digit when parsing number");
 
   bool encountered_dot = false;
@@ -294,7 +294,7 @@ Token parse_number(Lexer *lexer) {
   return token_at(lexer, TOKEN_NUMBER, start, value);
 }
 
-void consume_whitespace(Lexer *lexer) {
+static void consume_whitespace(Lexer *lexer) {
   // Indicates if we consumed any whitespace
   ASSERT(lexer->current != NULL,
          "Lexer current is NULL while consuming whitespace");

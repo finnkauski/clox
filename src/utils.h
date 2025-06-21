@@ -7,7 +7,7 @@
 #define RED_END "\033[0m"
 #define ERROR RED_START "ERROR" RED_END 
 
-#define DEBUG 0
+#define DEBUG 1
 #if DEBUG
 
 #define ASSERT(cond, ...)                                                      \

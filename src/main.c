@@ -7,6 +7,29 @@
 
 void usage() { fprintf(stderr, "Usage: clox tokenize <filename>\n"); }
 
+Lexer lex(const char *filepath) {
+  char *file_contents = read_file_contents(filepath);
+  if (file_contents == NULL) {
+    fprintf(stderr, ERROR "couldn't read input file [%s]", filepath);
+    exit(LEXER_EXIT_FAILURE);
+  }
+
+  ASSERT(strlen(file_contents) > 0,
+         "File read output is less than or equal to.");
+
+  Lexer lexer;
+  if (strlen(file_contents) > 0) {
+    lexer = init_lexer(filepath, file_contents);
+
+    scan_tokens(&lexer);
+  } else {
+    fprintf(stderr, ERROR "file [%s] is empty", filepath);
+    exit(LEXER_EXIT_FAILURE);
+  }
+
+  return lexer;
+}
+
 int main(int argc, char *argv[]) {
   // TODO: do we need this ?
   // Disable output buffering
@@ -24,60 +47,22 @@ int main(int argc, char *argv[]) {
 
   if (strcmp(command, "tokenize") == 0) {
     // Read file
-    char *file_contents = read_file_contents(argv[2]);
-    if (file_contents == NULL) {
+    Lexer lexer = lex(argv[2]);
+    for (size_t i = 0; (int)i < arrlen(lexer.tokens); i++) {
+      display_token(&lexer.tokens[i]);
+    }
+    if (lexer.had_error) {
+      fprintf(stderr, ERROR ": lexer had errors [%s].\n", argv[2]);
       exit(LEXER_EXIT_FAILURE);
     }
-
-    ASSERT(strlen(file_contents) > 0,
-           "File read output is less than or equal to.");
-
-    if (strlen(file_contents) > 0) {
-      Lexer lexer = init_lexer(argv[2], file_contents);
-
-      scan_tokens(&lexer);
-      for (size_t i = 0; (int)i < arrlen(lexer.tokens); i++) {
-        display_token(&lexer.tokens[i]);
-      }
-      if (lexer.had_error) {
-        fprintf(stderr, ERROR ": lexer had errors [%s].\n", argv[2]);
-        exit(LEXER_EXIT_FAILURE);
-      }
-      free_lexer(&lexer);
-      exit(EXIT_SUCCESS);
-    }
+    free_lexer(&lexer);
+    exit(EXIT_SUCCESS);
   } else if (strcmp(command, "parse") == 0) {
-
-    const char *string = "hello";
-    Expr left = {
-        .type = EXPR_LITERAL,
-        .value = {
-            .literal = {.type = TOKEN_STRING,
-                        .value = {.type = TYPE_STRING,
-                                  .as = {.string_value = {.start = string,
-                                                          .length = 6}}}}}};
-    Expr right_inner = {.type = EXPR_LITERAL,
-                        .value = {.literal = {
-                                      .type = TOKEN_NIL,
-                                  }}};
-
-    Expr right = {.type = EXPR_BINARY,
-                  .value = {.binary = {
-                                .left = &left,
-                                .op = {.type = TOKEN_MINUS},
-                                .right = &right_inner,
-                            }}};
-
-    Expr expr = {.type = EXPR_BINARY,
-                 .value = {.binary = {
-                               .left = &left,
-                               .op = {.type = TOKEN_MINUS},
-                               .right = &right,
-                           }}};
-
-    Expr grouping = {.type = EXPR_GROUPING,
-                     .value = {.grouping = {.expression = &expr}}};
-    expr_accept(&grouping, (ExprVisitor *)&AstPrinter);
+    Lexer lexer = lex(argv[2]);
+    Parser parser = parse(&lexer);
+    expr_accept(parser.root, (ExprVisitor *)&AstPrinter);
+    free_parser(&parser);
+    printf("\n");
   } else {
     fprintf(stderr, ERROR ": Unknown command: %s\n", command);
     usage();
